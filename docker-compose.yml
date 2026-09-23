@@ -1,0 +1,43 @@
+# instead of running different different services manually by docker run command we
+#  can just have all the entire stack in this one and use one command to completly run 
+# the entire stack. This is done by using docker-compose. Below is an example of a
+#  docker-compose.yml file that sets up a PostgreSQL database, Redis, and Kafka services.
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: amanpay-postgres
+    environment:
+      POSTGRES_USER: amanpay
+      POSTGRES_PASSWORD: amanpay
+      POSTGRES_DB: amanpay
+    ports:
+      - "5432:5432"
+    volumes:
+      - amanpay_pg:/var/lib/postgresql/data
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/001-schema.sql:ro
+
+  redis:
+    image: redis:7
+    container_name: amanpay-redis
+    ports:
+      - "6379:6379"
+
+  kafka:
+    image: apache/kafka:3.9.0
+    container_name: amanpay-kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_CFG_NODE_ID: 1
+      KAFKA_CFG_PROCESS_ROLES: controller,broker
+      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: "true"
+      ALLOW_PLAINTEXT_LISTENER: "yes"
+
+volumes:
+  amanpay_pg:
